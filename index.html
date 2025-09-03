@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPhone 12 Calculator Final</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #fff;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+}
+.calculator {
+    width: 90vw;
+    max-width: 390px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+.display {
+    width: 100%;
+    height: 70px;
+    font-size: 28px;
+    text-align: right;
+    padding: 15px;
+    box-sizing: border-box;
+    border: none;
+    background: #fff;
+    color: black;
+}
+.buttons-container {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 5px;
+    -webkit-overflow-scrolling: touch;
+}
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+.btn {
+    flex: 1 0 20%;
+    max-width: 70px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.btn:hover {
+    filter: brightness(1.2);
+}
+.btn-num { background: #eeeeee; color: black; }
+.btn-op { background: #6A0DAD; color: white; }
+.btn-ac { background: #A5A5A5; color: black; }
+.btn-func { background: #CCCCFF; color: black; }
+.btn-toggle, .btn-roman {
+    width: 100%;
+    border-radius: 15px;
+    height: 50px;
+    margin-top: 5px;
+    font-size: 16px;
+}
+.btn-toggle { background: #6A0DAD; color: white; }
+.btn-roman { background: #FF9800; color: white; }
+</style>
+</head>
+<body>
+<div class="calculator">
+    <input type="text" class="display" id="display" readonly>
+    <div class="buttons-container">
+        <div class="buttons" id="buttons"></div>
+    </div>
+    <button class="btn-toggle" id="modeBtn">Switch to Scientific</button>
+    <button class="btn-roman" onclick="convertToRoman()">ROMAWI</button>
+</div>
+
+<script>
+const display = document.getElementById('display');
+const buttonsContainer = document.getElementById('buttons');
+const modeBtn = document.getElementById('modeBtn');
+
+let mode = "standard"; 
+let memory = 0;
+
+const buttonsStandard = [
+    ["AC", "+/-", "%", "÷"],
+    ["7", "8", "9", "×"],
+    ["4", "5", "6", "−"],
+    ["1", "2", "3", "+"],
+    ["0", ".", "="]
+];
+
+const buttonsScientific = [
+    ["(", ")", "mc", "m+", "m-", "mr"],
+    ["2ⁿᵈ", "x²", "x³", "xʸ", "ln", "log"],
+    ["1/x", "√", "x!", "sin", "cos", "tan"],
+    ["π", "e", "Deg", "Rand", "sinh", "cosh"]
+];
+
+function createButtons() {
+    buttonsContainer.innerHTML = "";
+    let allButtons = buttonsStandard.slice();
+    if (mode === "scientific") allButtons = buttonsScientific.concat(allButtons);
+
+    allButtons.forEach(row => {
+        row.forEach(btn => {
+            const button = document.createElement('button');
+            button.textContent = btn;
+            button.classList.add('btn');
+
+            if (["÷","×","−","+","="].includes(btn)) button.classList.add('btn-op');
+            else if (["AC","+/-","%","mc","m+","m-","mr"].includes(btn)) button.classList.add('btn-ac');
+            else if (["sin","cos","tan","log","ln","√","x²","x³","xʸ","1/x","x!","π","e"].includes(btn)) button.classList.add('btn-func');
+            else button.classList.add('btn-num');
+
+            button.onclick = () => action(btn);
+            buttonsContainer.appendChild(button);
+        });
+    });
+    modeBtn.textContent = mode === "standard" ? "Switch to Scientific" : "⬅ Back";
+}
+
+function fixSymbol(key) {
+    if (key === "÷") return "/";
+    if (key === "×") return "*";
+    if (key === "−") return "-";
+    if (key === "xʸ") return "**";
+    if (key === "π") return Math.PI;
+    if (key === "e") return Math.E;
+    return key;
+}
+
+function action(key) {
+    try {
+        if (key === "AC") display.value = "";
+        else if (key === "=") calculate();
+        else if (key === "+/-") display.value = toggleSign(display.value);
+        else if (key === "mc") memory = 0;
+        else if (key === "m+") memory += parseFloat(display.value || 0);
+        else if (key === "m-") memory -= parseFloat(display.value || 0);
+        else if (key === "mr") display.value = memory;
+        else if (["sin","cos","tan","log","ln","√","x²","x³","1/x","x!"].includes(key)) scientificAction(key);
+        else display.value += fixSymbol(key);
+    } catch {
+        display.value = "Error";
+    }
+}
+
+function calculate() {
+    try {
+        display.value = eval(display.value);
+    } catch {
+        display.value = "Error";
+    }
+}
+
+function toggleSign(val) {
+    if (!val) return val;
+    return val[0] === "-" ? val.slice(1) : "-" + val;
+}
+
+function scientificAction(key) {
+    let val = parseFloat(display.value || 0);
+    switch(key) {
+        case "sin": display.value = Math.sin(val * Math.PI/180); break;
+        case "cos": display.value = Math.cos(val * Math.PI/180); break;
+        case "tan": display.value = Math.tan(val * Math.PI/180); break;
+        case "log": display.value = Math.log10(val); break;
+        case "ln": display.value = Math.log(val); break;
+        case "x²": display.value = val**2; break;
+        case "x³": display.value = val**3; break;
+        case "√": display.value = Math.sqrt(val); break;
+        case "1/x": display.value = 1/val; break;
+        case "x!": display.value = factorial(val); break;
+    }
+}
+
+function factorial(n) {
+    n = Math.floor(n);
+    if (n < 0) return "Error";
+    let f = 1;
+    for(let i=2;i<=n;i++) f*=i;
+    return f;
+}
+
+function convertToRoman() {
+    let num = parseInt(display.value);
+    if (isNaN(num) || num <= 0) { display.value="N/A"; return; }
+    const val = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+    const syms = ["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"];
+    let roman = "";
+    for (let i=0;i<val.length;i++) {
+        while(num>=val[i]) { roman += syms[i]; num -= val[i]; }
+    }
+    display.value = roman;
+}
+
+modeBtn.onclick = () => {
+    mode = mode==="standard"?"scientific":"standard";
+    createButtons();
+};
+
+createButtons();
+</script>
+</body>
+</html>
